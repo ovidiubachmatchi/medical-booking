@@ -1,10 +1,13 @@
 import express from 'express';
-import authRoutes from './src/routes/authRoutes.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import {verifyToken} from './src/session/middleware.js'
 import cookieParser from 'cookie-parser';
 
+import authRoutes from './src/routes/authRoutes.js';
+import {verifyToken} from './src/session/verifyToken.js'
+import {verifyAdmin} from './src/session/verifyAdmin.js'
+import appointmentsRoutes from './src/routes/appointmentsRoutes.js'
+import userRoutes from './src/routes/userRoutes.js'
 
 dotenv.config(); // setting our local env variabiles
 
@@ -25,6 +28,11 @@ app.use('/auth', authRoutes);
 
 // setting middleware
 app.use('/api', verifyToken);
+app.use('/api', appointmentsRoutes);
+
+// setting middleware
+app.use('/api', verifyAdmin);
+app.use('/api', userRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

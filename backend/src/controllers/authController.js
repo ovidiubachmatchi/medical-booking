@@ -1,6 +1,7 @@
-import dbQuery from '../database/database.js';
+import { dbQuery } from '../database/database.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 const saltRounds = 10;
 
@@ -32,7 +33,14 @@ const register = async (req, res) => {
 
         // Hash the password and insert new user
         const hashedPassword = await bcrypt.hash(password, saltRounds);
-        await dbQuery(`INSERT INTO users (email, parola) VALUES (?, ?)`, [email, hashedPassword]);
+
+        const userInstance = User.build({
+            email,
+            password: hashedPassword,
+        });
+      
+        await userInstance.save();
+
         res.status(201).send({ message: 'User registered successfully.' });
     } catch (error) {
         console.error(error);
@@ -56,12 +64,12 @@ const login = async (req, res) => {
         }
 
         // Compare submitted password with the stored hash
-        const match = await bcrypt.compare(password, user.parola);
+        const match = await bcrypt.compare(password, user.password);
         if (!match) {
             return res.status(401).send({ message: 'Invalid credentials.' });
         }
         // Initialize user session
-        const jwtToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+        const jwtToken = jwt.sign({ userId: user.id, admin: user.isAdmin }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
         
         res.cookie('jwtToken', jwtToken, {
             httpOnly: true,

@@ -1,7 +1,8 @@
 import sqlite3 from 'sqlite3';
 import { initializeDB } from './initializeDB.js';
+import { Sequelize } from 'sequelize';
 
-const { Database } = sqlite3.verbose();
+const { Database } = sqlite3;
 
 const db = new Database('./sqlite.db', (err) => {
     if (err) {
@@ -26,4 +27,9 @@ async function dbQuery(query, args) {
     });
 }
 
-export default dbQuery;
+const sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: './sqlite.db', // Ajustează calea relativă dacă este necesar
+  });
+
+export {dbQuery, sequelize};
