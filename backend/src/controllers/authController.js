@@ -5,6 +5,34 @@ import User from '../models/User.js';
 
 const saltRounds = 10;
 
+const refresh = (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        return res.status(401).send({ message: 'Refresh Token is required.' });
+    }
+
+    try {
+        // Verificarea validității refresh token-ului
+        const user = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+        // Generarea unui nou JWT
+        const newJwtToken = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+
+        // Trimiterea noului JWT
+        res.cookie('jwtToken', newJwtToken, {
+            httpOnly: true,
+            secure: false, // Set to true in production with HTTPS
+            maxAge: 3600000 // 1 hour
+        });
+
+        res.status(200).send({ message: "JWT refreshed successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(403).send({ message: "Invalid Refresh Token" });
+    }
+};
+
 const register = async (req, res) => {
     const { email, password, confirmPassword } = req.body;
 
@@ -68,22 +96,35 @@ const login = async (req, res) => {
         if (!match) {
             return res.status(401).send({ message: 'Invalid credentials.' });
         }
-        // Initialize user session
-        const jwtToken = jwt.sign({ userId: user.id, admin: user.isAdmin }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
-        
+
+        // Generate JWT token
+        const jwtToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+
+        // Generate refresh token
+        const refreshToken = jwt.sign({ userId: user.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+
+        // Store JWT token in HTTP-only cookie
         res.cookie('jwtToken', jwtToken, {
             httpOnly: true,
-            secure: false, // local development is http only
+            secure: false, // Set to true in production with HTTPS
             maxAge: 3600000 // 1 hour
         });
-    
-        res.status(200).send({ message: "Autentificare reușită"});
+
+        // Store refresh token in HTTP-only cookie
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: false, // Set to true in production with HTTPS
+            maxAge: 604800000 // 7 days
+        });
+
+        res.status(200).send({ message: "Autentificare reușită" });
 
     } catch (error) {
         console.error(error);
         res.status(500).send({ message: "Error during login." });
     }
 };
+
 
 const logout = (req, res) => {
     if (!req.cookies.jwtToken) {
@@ -103,4 +144,4 @@ const logout = (req, res) => {
     }
 };
 
-export { register, login, logout };
+export { register, login, logout, refresh };

@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const corsOptions = {
-    origin: 'http://localhost:8000', // frontend
+    origin: 'http://localhost:3000', // frontend
     credentials: true,
 };
 app.use(cors(corsOptions));
@@ -34,7 +34,7 @@ app.use('/api', appointmentsRoutes);
 app.use('/api', verifyAdmin);
 app.use('/api', userRoutes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
     console.log(`Serverul rulează pe portul ${PORT}`);
 });
